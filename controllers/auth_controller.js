@@ -1,6 +1,6 @@
-const User = require('../models/user_model.js');
-const Token = require('../models/token_model.js');
-const DeviceModel = require('../models/device_model.js');
+const User = require('../models/AuthModels/user_model.js');
+const Token = require('../models/AuthModels/token_model.js');
+const DeviceModel = require('../models/AuthModels/device_model.js');
 const bcrypt = require("bcrypt");
 const { getToken, sendOTP, isInvalidEmail, isInvalidPassword } = require('../func/helpers.js');
 const { Op } = require('sequelize');
@@ -132,11 +132,14 @@ const login = async (req, res) => {
                     user.otp_code = sendOTP(user.email);
                     user.save()
                 }
+                const safeUser = user.toJSON();
+                delete safeUser.otp_code;
+
                 return res.status(200).send({
                     "status": "success",
                     "message": user.is_verified == 1 ? "Uğurla daxil oldunuz" : "Dogrulama kodu göndərildi",
                     "page": user.is_verified == 1 ? "dashboard" : "otp",
-                    "data": user
+                    "data": safeUser
                 })
             } else {
                 return res.status(409).send({
@@ -157,15 +160,20 @@ const login = async (req, res) => {
 const check_pin_code = async (req, res) => {
     const { pin_code, user_id } = req.body
 
-    const user = User.findOne({ where: { user_id: user_id } })
-
-    if (user.otp_code == pin_code) {
+    const user = await User.findOne({ where: { user_id: user_id } })
+    if (!pin_code || !user_id) {
+        return res.status(400).send("pis usaq");
+    }
+    
+    if (user.otp_code === pin_code) {
         const token = getToken(user)
         await Token.create({
             user_id: user.user_id,
             token: token,
             created_at: new Date()
         })
+        user.otp_code = null;
+        await user.save();
         return res.status(200).send({
             "status": "success",
             "message": "Uğurla daxil oldunuz",
@@ -183,7 +191,7 @@ const check_pin_code = async (req, res) => {
 const resend_code = async (req, res) => {
     const { user_id } = req.body
 
-    const user = User.findOne({ where: { user_id: user_id } })
+    const user = await User.findOne({ where: { user_id: user_id } })
 
     user.otp_code = sendOTP(user.email)
     await user.save()
@@ -193,5 +201,56 @@ const resend_code = async (req, res) => {
     })
 }
 
+const forgot_password = async (req, res) => {
+    const { email, password, request_type, id, pin_code } = req.body
 
-module.exports = { register, login, check_pin_code, resend_code }
+    if (request_type == "send_otp") {
+
+        const user = await User.findOne({
+            where: { email: email }
+        })
+        user.otp_code = sendOTP(user.email);
+        await user.save()
+        return res.status(200).send({
+            "status": "success",
+            "message": "Doğrulama kodu göndərildi",
+            "data": user
+        })
+    } else if (request_type == "check_pin_code") {
+        const user = await User.findOne({
+            where: { user_id: id }
+        })
+
+        if (user.otp_code == pin_code) {
+            user.otp_code = null;
+            await user.save();
+            return res.status(200).send({
+                "status": "success",
+                "message": "Doğrulama kodu təsdiqləndi",
+                "page": "reset_password"
+            })
+        } else {
+            return res.status(409).send({
+                "status": "warning",
+                "message": "Doğrulama kodu səhv qeyd olundu",
+            })
+        }
+    } else if (request_type == "reset_password") {
+        const user = await User.findOne({
+            where: { user_id: id }
+        })
+        const hashed_password = await bcrypt.hash(password, 10);
+
+        user.password = password;
+        user.hashed_password = hashed_password;
+        await user.save();
+        return res.status(200).send({
+            "status": "success",
+            "message": "Şifrəniz yeniləndi",
+            "page": "login"
+        })
+    }
+}
+
+
+module.exports = { register, login, check_pin_code, resend_code, forgot_password }

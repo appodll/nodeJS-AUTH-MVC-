@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const Router = require('./routes/routes.js');
+const authRouter = require('./routes/auth_routes.js');
+const socialRouter = require('./routes/social_routes.js');
 const useragent = require('express-useragent');
 
 dotenv.config()
@@ -16,6 +17,8 @@ app.use(express.urlencoded())
 app.use(useragent.express());
 
 
-app.use("/api", Router)
+app.use("/api/auth", authRouter)
+app.use('/api/social', socialRouter)
+
 
 app.listen(process.env.PORT)

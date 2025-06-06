@@ -1,4 +1,4 @@
-const db = require("../config/db.js");
+const db = require("../../config/db.js");
 const { DataTypes } = require('sequelize');
 
 const Device = db.define("deviceInfo", {

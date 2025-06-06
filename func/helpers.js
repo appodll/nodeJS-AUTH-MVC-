@@ -12,6 +12,15 @@ const getToken = (user) => {
     return token;
 }
 
+const getTokenInfo = (token) => {
+  try {
+    return jwt.verify(token, process.env.SECRET_KEY);
+  } catch (err) {
+    console.error("JWT verification error:", err.message);
+    return null; 
+  }
+}
+
 function isInvalidEmail(email) {
     const pattern = /^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
     return pattern.test(email);
@@ -62,4 +71,4 @@ function sendOTP(email) {
 }
 
 
-module.exports = { getToken, isInvalidEmail, isInvalidPassword, sendOTP }
+module.exports = { getToken, isInvalidEmail, isInvalidPassword, sendOTP, getTokenInfo }
