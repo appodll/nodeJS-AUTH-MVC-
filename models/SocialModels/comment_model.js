@@ -14,16 +14,11 @@ const CommentModel = db.define("comment", {
         type: DataTypes.STRING,
         allowNull: true,
     },
-    likes_count: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-    },
-    reply_list: {
-        type: DataTypes.JSON,
-        allowNull: false,
-    },
 },{
-    tableName: "post_comments"
+    tableName: "post_comments",
+    defaultScope: {
+        attributes: { exclude: ['user_id'] }
+    }
 })
 
 module.exports = CommentModel

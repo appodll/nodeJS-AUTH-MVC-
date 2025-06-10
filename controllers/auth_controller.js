@@ -2,7 +2,7 @@ const User = require('../models/AuthModels/user_model.js');
 const Token = require('../models/AuthModels/token_model.js');
 const DeviceModel = require('../models/AuthModels/device_model.js');
 const bcrypt = require("bcrypt");
-const { getToken, sendOTP, isInvalidEmail, isInvalidPassword } = require('../func/helpers.js');
+const { getToken, sendOTP, isInvalidEmail, isInvalidPassword } = require('../utils/helpers.js');
 const { Op } = require('sequelize');
 const useragent = require('express-useragent');
 

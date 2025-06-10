@@ -18,18 +18,6 @@ const Post = db.define("post", {
         type: DataTypes.STRING,
         allowNull: true,
     },
-    likes_count: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
-    comments_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
-    comments_count: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
 },
     {
         tableName: "social_posts"
