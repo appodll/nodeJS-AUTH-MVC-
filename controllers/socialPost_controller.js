@@ -5,11 +5,24 @@ const PostLikes = require('../models/SocialModels/postLikes_model.js');
 const CommentLikes = require('../models/SocialModels/commentlikes_model.js');
 const ReplyComment = require('../models/SocialModels/replyComment_model.js');
 const ReplyLikes = require('../models/SocialModels/replyLikes_model.js');
+const FollowModel = require('../models/FollowModels/follow_model.js');
+const NotificationModel = require('../models/NotificationModels/notification_model.js');
+
 
 const get_all_post = async (req, res) => {
     try {
-        const { token, post_type, content, file_url } = req.query
-        res.send(getTokenInfo(token))
+        const { token } = req.query
+        const tokenValue = getTokenInfo(token);
+        const allFollowed = await FollowModel.findAll({ where: { follower_id: tokenValue.user_id } })
+        let followingFeed = [];
+        for (let followed of allFollowed) {
+            const post_ = await Post.findAll({ where: { user_id: followed.followed_id } })
+            for (let post of post_) {
+                followingFeed.push(post.toJSON());
+            }
+        }
+
+        res.send(followingFeed)
     } catch (error) {
         res.status(500).send({ status: "error", message: error.message });
     }
@@ -90,6 +103,16 @@ const add_comments = async (req, res) => {
                 reply_comment: allReplyList,
             })
         }
+
+        const infoPost = await Post.findOne({ where: { id: post_id } })
+
+        await NotificationModel.create({
+            receive_id: infoPost.user_id,
+            sender_id: tokenValue.user_id,
+            status: "pending",
+            title: "Post vəziyyəti",
+            content: `${tokenValue.username} sizin postunuza ${comment} şərh etdi.`
+        })
 
         res.status(200).send({
             "status": "success",
@@ -189,6 +212,16 @@ const reply_comment = async (req, res) => {
             })
         }
 
+        const infoPost = await Post.findOne({ where: { id: post_id } })
+
+        await NotificationModel.create({
+            receive_id: infoPost.user_id,
+            sender_id: tokenValue.user_id,
+            status: "pending",
+            title: "Şərh vəziyyəti",
+            content: `${tokenValue.username} sizin şərhinizə ${comment} cavabını verdi.`
+        })
+
         res.status(200).send({
             "status": "success",
             "data": allCommentList
@@ -216,6 +249,15 @@ const toggle_like = async (req, res) => {
                         user_id: token_value.user_id,
                         post_id: post_id
                     }
+                })
+                const infoPost = await Post.findOne({ where: { id: post_id } })
+
+                await NotificationModel.create({
+                    receive_id: infoPost.user_id,
+                    sender_id: token_value.user_id,
+                    status: "pending",
+                    title: "Post vəziyyəti",
+                    content: `${token_value.username} sizin postunuzu bəyəndi.`
                 })
             } else {
                 await PostLikes.create({
@@ -267,6 +309,15 @@ const toggle_like = async (req, res) => {
                 await CommentLikes.create({
                     user_id: token_value.user_id,
                     comment_id: comment_id
+                })
+                const infoComment = await CommentLikes.findOne({ where: { comment_id } })
+
+                await NotificationModel.create({
+                    receive_id: infoComment.user_id,
+                    sender_id: token_value.user_id,
+                    status: "pending",
+                    title: "Şərh vəziyyəti",
+                    content: `${token_value.username} sizin şərhinizi bəyəndi.`
                 })
             }
             res.status(200).send({
