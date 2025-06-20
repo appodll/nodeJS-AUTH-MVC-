@@ -21,4 +21,4 @@ app.use('/api/social', socialRouter)
 app.use("/api/following", followRouter)
 
 
-app.listen(process.env.PORT)
+app.listen(process.env.PORT,)

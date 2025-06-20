@@ -5,4 +5,5 @@ var db = new Sequelize('flicksy', "root", "3122005x", {
     dialect: "mysql"
 })
 
+
 module.exports = db
